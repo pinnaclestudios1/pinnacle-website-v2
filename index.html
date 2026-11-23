@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Pinnacle Studios — Software, Web &amp; Creative Agency</title>
+    <meta name="description" content="Pinnacle Studios is a software and creative agency. We design, build and grow digital products: software, websites, UI/UX design, branding, motion graphics, automation and SEO." />
+    <meta name="theme-color" content="#0c0b0e" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Pinnacle Studios" />
+    <meta property="og:title" content="Pinnacle Studios — Software, Web &amp; Creative Agency" />
+    <meta property="og:description" content="Step inside a 3D gallery of software, websites, design, branding, motion graphics, automation and SEO." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="application/ld+json"><!--JSONLD--></script>
+    <script>
+      // Decide before first paint: 3D gallery (WebGL) or classic 2D document.
+      (function () {
+        var ok = false;
+        try { var c = document.createElement('canvas'); ok = !!(c.getContext('webgl2') || c.getContext('webgl')); } catch (e) {}
+        var pref = null; try { pref = localStorage.getItem('pinnacle:view'); } catch (e) {}
+        if (ok && pref !== 'classic') document.documentElement.classList.add('gl');
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#classic" data-action="toggle-classic">Skip to the 2D site</a>
+
+    <canvas id="gl" aria-hidden="true"></canvas>
+
+    <!-- ───────── 3D gallery HUD ───────── -->
+    <div class="hud" id="hud">
+      <header class="hud-header">
+        <a class="logo" href="/" data-link aria-label="Pinnacle Studios, back to the lobby">
+          <!--LOGO-->
+        </a>
+        <div class="hud-header__floor" aria-hidden="true">
+          <span class="hud-header__lvl" data-floor-level>G</span>
+          <span class="hud-header__name" data-floor-name>The Lobby</span>
+        </div>
+        <div class="hud-header__actions">
+          <button class="icon-btn" data-action="sound" aria-pressed="false" aria-label="Toggle sound">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" /><path class="snd-wave" d="M16 8.5a4.5 4.5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12" /></svg>
+          </button>
+          <button class="text-btn" data-action="toggle-classic">2D view</button>
+          <button class="text-btn" data-action="directory" aria-haspopup="dialog">Directory</button>
+          <a class="btn btn--primary btn--sm" href="/contact" data-link>Start a project</a>
+        </div>
+      </header>
+
+      <nav class="lift" aria-label="Floors">
+        <p class="lift__label" aria-hidden="true">Lift</p>
+        <ol class="lift__buttons" data-lift></ol>
+      </nav>
+
+      <div class="placard-slot" data-placard-slot></div>
+
+      <div class="progress" data-progress aria-hidden="true">
+        <div class="progress__track"><div class="progress__fill" data-progress-fill></div></div>
+        <div class="progress__stops" data-progress-stops></div>
+      </div>
+
+      <div class="overscroll" data-overscroll aria-hidden="true">
+        <span class="overscroll__ring"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" /><circle class="overscroll__val" cx="18" cy="18" r="16" /></svg><b>↑</b></span>
+        <span class="overscroll__text" data-overscroll-text>Keep scrolling to ride up</span>
+      </div>
+
+      <div class="scroll-hint" data-scroll-hint aria-hidden="true"><span></span>Scroll, swipe or use ← → to walk</div>
+
+      <div class="toast" data-toast role="status" hidden><p data-toast-text></p><button class="toast__close" data-toast-close aria-label="Dismiss">✕</button></div>
+      <pre class="debug" data-debug hidden></pre>
+
+      <div class="bubble" data-bubble aria-hidden="true"></div>
+      <div class="hover-label" data-hover-label aria-hidden="true"></div>
+    </div>
+
+    <!-- Case study viewer -->
+    <div class="modal" data-modal role="dialog" aria-modal="true" aria-label="Case study" hidden>
+      <div class="modal__scrim" data-action="close-modal"></div>
+      <div class="modal__sheet" data-scroll-lock>
+        <button class="modal__close icon-btn" data-action="close-modal" aria-label="Close case study">✕</button>
+        <div data-modal-body></div>
+      </div>
+    </div>
+
+    <!-- Floor directory -->
+    <div class="directory" data-directory role="dialog" aria-modal="true" aria-label="Gallery directory" hidden>
+      <div class="directory__inner" data-scroll-lock>
+        <header class="directory__head">
+          <p class="kicker">Gallery directory</p>
+          <button class="icon-btn" data-action="directory" aria-label="Close directory">✕</button>
+        </header>
+        <ol class="directory__floors" data-directory-list></ol>
+      </div>
+    </div>
+
+    <!-- Legal -->
+    <div class="modal modal--legal" data-legal-modal role="dialog" aria-modal="true" aria-label="Legal" hidden>
+      <div class="modal__scrim" data-action="close-legal"></div>
+      <div class="modal__sheet" data-scroll-lock>
+        <button class="modal__close icon-btn" data-action="close-legal" aria-label="Close">✕</button>
+        <div data-legal-body></div>
+      </div>
+    </div>
+
+    <!-- Elevator doors: loader + floor transitions -->
+    <div class="elevator is-closed" data-elevator aria-hidden="true">
+      <div class="elevator__door elevator__door--l"><img class="elevator__logo" src="/brand/pinnacle-stacked-dark.svg" alt="" /></div>
+      <div class="elevator__door elevator__door--r"><img class="elevator__logo" src="/brand/pinnacle-stacked-dark.svg" alt="" /></div>
+      <div class="elevator__bands" data-elevator-bands></div>
+      <div class="elevator__seam"></div>
+      <div class="elevator__ride">
+        <svg class="elevator__arrow" viewBox="0 0 40 24"><path d="M4 20 L20 5 L36 20" /></svg>
+        <div class="elevator__window"><div class="elevator__reel" data-elevator-reel></div></div>
+        <p class="elevator__dest" data-elevator-dest></p>
+      </div>
+      <div class="elevator__frame"></div>
+      <div class="elevator__center">
+        <div class="dial">
+          <svg viewBox="0 0 200 116" class="dial__svg">
+            <path class="dial__arc" d="M20 100 A80 80 0 0 1 180 100" />
+            <path class="dial__arc dial__arc--fill" data-dial-fill d="M20 100 A80 80 0 0 1 180 100" />
+            <g class="dial__marks" data-dial-marks></g>
+            <g class="dial__needle" data-dial-needle><line x1="100" y1="100" x2="100" y2="34" /><circle cx="100" cy="100" r="7" /></g>
+          </svg>
+        </div>
+        <p class="elevator__status" data-elevator-status>Opening the gallery…</p>
+        <button class="btn btn--primary elevator__enter" data-action="enter" hidden>Enter the gallery</button>
+        <button class="elevator__skip" data-action="toggle-classic">or view the 2D site</button>
+      </div>
+    </div>
+
+    <!-- ───────── Classic 2D document (pre-rendered at build time, crawlable) ───────── -->
+    <div id="classic" class="classic"><!--CLASSIC--></div>
+
+    <div class="sr-only" aria-live="polite" data-announcer></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
