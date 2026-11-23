@@ -44,7 +44,10 @@ export class App {
   async init() {
     const c = this.content;
     if (import.meta.env.DEV) window.__app = this;
+    const mark = (n) => performance.mark(`pinnacle:${n}`);
+    mark('init');
     this.engine = new Engine(document.getElementById('gl'));
+    mark('engine');
     this.rig = new CameraRig(this.engine);
     this.scroll = new Scroll();
     this.elevator = new Elevator(
@@ -58,6 +61,7 @@ export class App {
     // Canvas textures need the web fonts first.
     const faces = ['800 40px Fraunces', '600 40px Fraunces', '700 40px Fraunces', 'italic 700 40px Fraunces', '400 40px "Manrope Variable"', '700 40px "Manrope Variable"', '500 40px "JetBrains Mono"'];
     await Promise.race([Promise.all(faces.map((f) => document.fonts.load(f))), wait(3000)]);
+    mark('fonts');
     this.elevator.setLoad(0.12);
 
     this.mascot = new Mascot(this);
@@ -72,6 +76,7 @@ export class App {
     // the background once they're inside (see _prepareRest).
     this._loadProgress = (p) => this.elevator.setLoad(0.12 + p * 0.88);
     await this.ensureFloor(route.floor);
+    mark('floor');
     this._loadProgress = null;
 
     this.ui.buildLift(c.floors);
@@ -87,6 +92,7 @@ export class App {
     this.elevator.setLoad(1);
     await wait(250);
     const f = c.floors[route.floor];
+    mark('ready');
     await this.elevator.ready(route.floor, route.floor === 0 ? 'Welcome to the gallery' : `Floor ${f.level} · ${f.name}`);
 
     await this._waitForEnter();
@@ -141,7 +147,9 @@ export class App {
       this._loadProgress?.(0.1);
       this._chunkT = performance.now();
       await f.build();
-      await grainDone(); // textures finish their grain pass off-thread
+      performance.mark(`pinnacle:built-${i}`);
+      await grainDone();
+      performance.mark(`pinnacle:grain-${i}`); // textures finish their grain pass off-thread
       this.engine.scene.add(f.group);
       const list = [];
       f.interactives.forEach((e) => e.object.traverse((o) => o.isMesh && list.push(o)));

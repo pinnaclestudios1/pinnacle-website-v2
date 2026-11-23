@@ -21,9 +21,9 @@ export function canvasTex(w, h, draw, { repeat, srgb = true, aniso = 8 } = {}) {
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
-  // Kept in main memory: the grain pass reads pixels back, which is much
-  // faster from a CPU canvas than from a GPU one.
-  const ctx = c.getContext('2d', { willReadFrequently: true });
+  // GPU-backed canvas: the drawing (blurred marble veins etc.) is far faster
+  // there than in CPU mode, which outweighs the one pixel read-back for grain.
+  const ctx = c.getContext('2d');
   draw(ctx, w, h);
   const t = new THREE.CanvasTexture(c);
   c.__tex = t; // lets an async grain pass flag the texture for re-upload
