@@ -149,6 +149,8 @@ export class UI {
       )
       .reverse()
       .join('');
+    if (this._dirBound) return;
+    this._dirBound = true;
     this.el.dirList.addEventListener('click', (e) => {
       const b = e.target.closest('[data-dir-stop]');
       if (!b) return;
@@ -244,9 +246,38 @@ export class UI {
       slot.dataset.align = stop.align || 'left';
       slot.innerHTML = stop.html;
       this._hydrate(slot);
+      this._collapseForPhone(slot, stop.align);
       this._regionDirty = true;
       requestAnimationFrame(() => token === this._placardToken && slot.classList.add('is-in'));
     }, delay);
+  }
+
+  /**
+   * On phones, exhibit panels open as a short summary (label, title, main
+   * button) with a "More" toggle, so the 3D scene stays visible. Once the
+   * visitor expands one, the rest open expanded too.
+   */
+  _collapseForPhone(slot, align) {
+    if (!matchMedia('(max-width: 760px)').matches) return;
+    if (align === 'hero' || align === 'panel') return;
+    const card = slot.querySelector('.placard');
+    if (!card || !card.querySelector('.placard__title')) return;
+    const btn = document.createElement('button');
+    btn.className = 'placard__more';
+    btn.type = 'button';
+    const set = (collapsed) => {
+      card.classList.toggle('is-collapsed', collapsed);
+      btn.setAttribute('aria-expanded', String(!collapsed));
+      btn.textContent = collapsed ? 'More' : 'Less';
+      this._regionDirty = true;
+    };
+    btn.addEventListener('click', () => {
+      const collapse = !card.classList.contains('is-collapsed');
+      this._phoneExpanded = !collapse;
+      set(collapse);
+    });
+    card.querySelector('.placard__title').after(btn);
+    set(!this._phoneExpanded);
   }
 
   /** Small dismissible notice at the top of the screen. */

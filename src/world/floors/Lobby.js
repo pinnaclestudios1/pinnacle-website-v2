@@ -128,6 +128,7 @@ export class Lobby extends Floor {
 
     const faceMat = std({ color: '#f4ede2', roughness: 0.3, metalness: 0.02 });
     const sideMat = std({ color: '#cdbfa9', roughness: 0.42, metalness: 0.05 });
+    await this.pause();
     this.title = new HeroTitle({
       faceMat,
       sideMat,
@@ -145,6 +146,7 @@ export class Lobby extends Floor {
     this.heroBox = new THREE.Box3().setFromObject(this.title.group).union(new THREE.Box3().setFromObject(plinth));
     this.heroBox.max.y += 0.9;
 
+    await this.pause();
     // Lights
     g.add(new THREE.HemisphereLight('#fff1e0', '#120e0c', 0.35));
     spot(g, { from: V(-9, 14, 13), to: V(0, 2.6, 0), intensity: 420, angle: 0.42, penumbra: 0.7, castShadow: true, coneOpacity: 0.07, poolSize: 16 });

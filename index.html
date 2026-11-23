@@ -43,8 +43,8 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" /><path class="snd-wave" d="M16 8.5a4.5 4.5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12" /></svg>
           </button>
           <button class="text-btn" data-action="toggle-classic">2D view</button>
-          <button class="text-btn" data-action="directory" aria-haspopup="dialog">Directory</button>
-          <a class="btn btn--primary btn--sm" href="/contact" data-link>Start a project</a>
+          <button class="text-btn" data-action="directory" aria-haspopup="dialog"><span class="lbl-long">Directory</span><span class="lbl-short">Menu</span></button>
+          <a class="btn btn--primary btn--sm hud-cta" href="/contact" data-link><span class="lbl-long">Start a project</span><span class="lbl-short">Contact</span></a>
         </div>
       </header>
 
@@ -88,6 +88,7 @@
       <div class="directory__inner" data-scroll-lock>
         <header class="directory__head">
           <p class="kicker">Gallery directory</p>
+          <button class="text-btn directory__2d" data-action="toggle-classic">2D view</button>
           <button class="icon-btn" data-action="directory" aria-label="Close directory">✕</button>
         </header>
         <ol class="directory__floors" data-directory-list></ol>

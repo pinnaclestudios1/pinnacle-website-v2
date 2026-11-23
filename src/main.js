@@ -3,10 +3,8 @@ import '@fontsource/fraunces/400-italic.css';
 import '@fontsource/fraunces/600.css';
 import '@fontsource/fraunces/700.css';
 import '@fontsource/fraunces/800.css';
-import '@fontsource/manrope/400.css';
-import '@fontsource/manrope/500.css';
-import '@fontsource/manrope/700.css';
-import '@fontsource/manrope/800.css';
+// Manrope as one variable file (renders identically to the static weights).
+import '@fontsource-variable/manrope/wght.css';
 import '@fontsource/jetbrains-mono/400.css';
 import '@fontsource/jetbrains-mono/500.css';
 import './styles/main.css';

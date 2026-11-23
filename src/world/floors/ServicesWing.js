@@ -72,6 +72,7 @@ export class ServicesWing extends Floor {
       g.add(wire);
     }
 
+    await this.pause();
     // Exhibits
     this.sculptures = [];
     const spotTargets = [];

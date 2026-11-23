@@ -3,7 +3,7 @@ import * as THREE from 'three';
 /* Procedural canvas textures: every image in the gallery is drawn in code. */
 
 export const SERIF = 'Fraunces, Georgia, serif';
-export const SANS = 'Manrope, system-ui, sans-serif';
+export const SANS = '"Manrope Variable", Manrope, system-ui, sans-serif';
 export const MONO = '"JetBrains Mono", ui-monospace, monospace';
 
 export function rng(seed = 1) {
@@ -21,9 +21,12 @@ export function canvasTex(w, h, draw, { repeat, srgb = true, aniso = 8 } = {}) {
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
-  const ctx = c.getContext('2d');
+  // Kept in main memory: the grain pass reads pixels back, which is much
+  // faster from a CPU canvas than from a GPU one.
+  const ctx = c.getContext('2d', { willReadFrequently: true });
   draw(ctx, w, h);
   const t = new THREE.CanvasTexture(c);
+  c.__tex = t; // lets an async grain pass flag the texture for re-upload
   t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
   t.anisotropy = aniso;
   if (repeat) {
@@ -33,17 +36,67 @@ export function canvasTex(w, h, draw, { repeat, srgb = true, aniso = 8 } = {}) {
   return t;
 }
 
-export function grain(ctx, w, h, amount = 18, seed = 3) {
+/* Film grain. The per-pixel loop runs in a worker (identical maths and seed), so
+   building textures never stalls the page. Falls back to running in-page. */
+
+let _worker;
+let _jobId = 0;
+const _pending = new Map();
+/** Outstanding grain passes; await `grainDone()` before showing new textures. */
+const _jobs = new Set();
+// (with a safety timeout so a broken worker can never block the gallery)
+export const grainDone = () => Promise.race([Promise.all([..._jobs]), new Promise((r) => setTimeout(r, 4000))]);
+
+function grainWorker() {
+  if (_worker !== undefined) return _worker;
+  try {
+    _worker = new Worker(new URL('./grain.worker.js', import.meta.url), { type: 'module' });
+    _worker.onmessage = (e) => {
+      const done = _pending.get(e.data.id);
+      _pending.delete(e.data.id);
+      done?.(e.data.buf);
+    };
+    _worker.onerror = () => {
+      _worker = null;
+      for (const done of _pending.values()) done(null);
+      _pending.clear();
+    };
+  } catch (err) {
+    _worker = null;
+  }
+  return _worker;
+}
+
+function grainSync(d, amount, seed) {
   const r = rng(seed);
-  const img = ctx.getImageData(0, 0, w, h);
-  const d = img.data;
   for (let i = 0; i < d.length; i += 4) {
     const n = (r() - 0.5) * amount;
     d[i] += n;
     d[i + 1] += n;
     d[i + 2] += n;
   }
-  ctx.putImageData(img, 0, 0);
+}
+
+export function grain(ctx, w, h, amount = 18, seed = 3) {
+  const img = ctx.getImageData(0, 0, w, h);
+  const worker = grainWorker();
+  if (!worker) {
+    grainSync(img.data, amount, seed);
+    ctx.putImageData(img, 0, 0);
+    return;
+  }
+  const id = ++_jobId;
+  const job = new Promise((resolve) => {
+    _pending.set(id, (buf) => {
+      if (!buf) return resolve();
+      ctx.putImageData(new ImageData(new Uint8ClampedArray(buf), w, h), 0, 0);
+      if (ctx.canvas.__tex) ctx.canvas.__tex.needsUpdate = true;
+      resolve();
+    });
+  });
+  _jobs.add(job);
+  job.then(() => _jobs.delete(job));
+  worker.postMessage({ id, buf: img.data.buffer, amount, seed: seed >>> 0 }, [img.data.buffer]);
 }
 
 function rrect(ctx, x, y, w, h, r) {

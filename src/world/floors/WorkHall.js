@@ -63,7 +63,8 @@ export class WorkHall extends Floor {
     this.frames = [];
     const spotTargets = [];
     const keys = [{ pos: [0, 3.3, 6], look: [0, 3.2, -24], stop: { id: 'intro', label: 'Selected work', html: tplWorkIntro(c), align: 'left', mascot: c.floors[2].mascot } }];
-    c.caseStudies.forEach((cs, i) => {
+    for (const [i, cs] of c.caseStudies.entries()) {
+      await this.pause();
       const side = i % 2 === 0 ? -1 : 1;
       const z = z0 - 16 - i * gap;
       const f = frame({ w: 4.6, h: 3.34, map: caseArtTex(cs, i), border: 0.34, thick: 0.26, frameMat: brass });
@@ -111,7 +112,7 @@ export class WorkHall extends Floor {
         shift: side * 0.24,
         stop: { id: cs.slug, label: cs.client, html: tplCase(cs, i), align: side < 0 ? 'right' : 'left' },
       });
-    });
+    }
 
     // End: the empty frame
     const emptyArt = textTex({ w: 1280, h: 930, bg: '#16201c', lines: [{ text: 'Your project', font: SERIF, size: 150, weight: 600, y: 470, color: '#f2f0e9', align: 'center' }, { text: 'COULD HANG HERE', font: MONO, size: 46, weight: 500, y: 560, color: '#d9b26a', spacing: 12, align: 'center' }] });

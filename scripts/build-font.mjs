@@ -5,15 +5,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import opentype from 'opentype.js';
 
+// Only the characters the 3D text actually uses are kept, which keeps these files tiny.
+// If you change the 3D title (Lobby.js) or the rooftop neon (Rooftop.js), add the
+// new characters here and run `npm run fonts`.
 const jobs = [
-  { src: '@fontsource/fraunces/files/fraunces-latin-800-normal.woff', out: 'fraunces-800.typeface.json' },
-  { src: '@fontsource/fraunces/files/fraunces-latin-700-italic.woff', out: 'fraunces-700-italic.typeface.json' },
+  { src: '@fontsource/fraunces/files/fraunces-latin-800-normal.woff', out: 'fraunces-800.typeface.json', text: 'Pinnacle Studios “”' },
+  { src: '@fontsource/fraunces/files/fraunces-latin-700-italic.woff', out: 'fraunces-700-italic.typeface.json', text: 'say hello.' },
 ];
 
-const CHARS = new Set(Array.from({ length: 95 }, (_, i) => String.fromCharCode(32 + i)));
-for (const ch of '’‘“”—·') CHARS.add(ch);
-
 for (const job of jobs) {
+  const CHARS = new Set(job.text);
   const file = path.resolve('node_modules', job.src);
   const buf = fs.readFileSync(file);
   const font = opentype.parse(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));

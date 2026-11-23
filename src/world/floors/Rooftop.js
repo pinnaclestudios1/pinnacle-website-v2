@@ -45,6 +45,7 @@ export class Rooftop extends Floor {
     halo.position.copy(moon.position);
     g.add(moon, halo);
 
+    await this.pause();
     // City skyline
     const win = windowsTex();
     const bGeo = new THREE.BoxGeometry(1, 1, 1);
@@ -92,6 +93,7 @@ export class Rooftop extends Floor {
       g.add(pane, rail);
     }
 
+    await this.pause();
     // Neon sign on scaffold
     const font = new Font(italicJson);
     const neonMat = new THREE.MeshBasicMaterial({ color: new THREE.Color('#ff2a08').multiplyScalar(1.15), toneMapped: false });

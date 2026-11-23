@@ -63,6 +63,11 @@ export class Floor {
     return entry;
   }
 
+  /** Let the browser breathe between chunks of build work (keeps frames smooth). */
+  pause() {
+    return this.app._yield ? this.app._yield() : Promise.resolve();
+  }
+
   async build() {}
   update() {}
   enter() {}

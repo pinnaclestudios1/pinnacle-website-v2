@@ -11,6 +11,7 @@ import { WorkHall } from './world/floors/WorkHall.js';
 import { StudioRotunda } from './world/floors/StudioRotunda.js';
 import { Rooftop } from './world/floors/Rooftop.js';
 import { tplCaseDetail } from './ui/templates.js';
+import { grainDone } from './world/textures.js';
 
 const FLOOR_CLASSES = [Lobby, ServicesWing, WorkHall, StudioRotunda, Rooftop];
 const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r()));
@@ -55,7 +56,7 @@ export class App {
     this.elevator.setLoad(0.04);
 
     // Canvas textures need the web fonts first.
-    const faces = ['800 40px Fraunces', '600 40px Fraunces', '700 40px Fraunces', 'italic 700 40px Fraunces', '400 40px Manrope', '500 40px Manrope', '700 40px Manrope', '800 40px Manrope', '500 40px "JetBrains Mono"'];
+    const faces = ['800 40px Fraunces', '600 40px Fraunces', '700 40px Fraunces', 'italic 700 40px Fraunces', '400 40px "Manrope Variable"', '700 40px "Manrope Variable"', '500 40px "JetBrains Mono"'];
     await Promise.race([Promise.all(faces.map((f) => document.fonts.load(f))), wait(3000)]);
     this.elevator.setLoad(0.12);
 
@@ -64,46 +65,21 @@ export class App {
     this.engine.scene.add(this.mascot.root);
 
     this.floors = FLOOR_CLASSES.map((F, i) => new F(this, c.floors[i], i));
-    for (let i = 0; i < this.floors.length; i++) {
-      await this.floors[i].build();
-      this.engine.scene.add(this.floors[i].group);
-      this.elevator.setLoad(0.12 + ((i + 1) / this.floors.length) * 0.6);
-      await nextFrame();
-    }
-    this.interactiveMeshes = this.floors.map((f) => {
-      const list = [];
-      f.interactives.forEach((e) => e.object.traverse((o) => o.isMesh && list.push(o)));
-      return list;
-    });
+    this.interactiveMeshes = this.floors.map(() => []);
+    const route = this.parse(location.pathname);
 
-    // Warm up shaders floor by floor so lift rides don't stutter.
-    const r = this.engine.renderer;
-    for (let i = 0; i < this.floors.length; i++) {
-      this.floors.forEach((f, k) => (f.group.visible = k === i));
-      this.floors[i].pose(0, this._pos, this._look);
-      this.engine.camera.position.copy(this._pos);
-      this.engine.camera.lookAt(this._look);
-      this.engine.camera.updateMatrixWorld();
-      try {
-        if (r.compileAsync) await r.compileAsync(this.engine.scene, this.engine.camera);
-        else r.compile(this.engine.scene, this.engine.camera);
-      } catch (e) {}
-      this.engine.composer.render(0.016);
-      this.elevator.setLoad(0.72 + ((i + 1) / this.floors.length) * 0.28);
-      await nextFrame();
-    }
-    this.floors.forEach((f) => (f.group.visible = false));
+    // Build only the floor the visitor lands on. The others are prepared in
+    // the background once they're inside (see _prepareRest).
+    this._loadProgress = (p) => this.elevator.setLoad(0.12 + p * 0.88);
+    await this.ensureFloor(route.floor);
+    this._loadProgress = null;
 
     this.ui.buildLift(c.floors);
-    this.ui.buildDirectory(
-      c.floors,
-      this.floors.map((f) => f.stops),
-    );
+    this._refreshDirectory();
     this._bindUI();
     this._environmentChecks();
     this._bindPointer();
 
-    const route = this.parse(location.pathname);
     this.activate(route.floor, { stopId: route.stop });
     if (route.floor === 0) this.floors[0].title.setIntroHidden();
     this.engine.add((dt, t) => this.update(dt, t));
@@ -123,6 +99,101 @@ export class App {
     this.scroll.enabled = true;
     this.activeStop = -2;
     if (route.caseSlug) this.openCase(route.caseSlug, { push: false });
+    this._prepareRest(route.floor);
+  }
+
+  /* ───────────── On-demand floors ───────────── */
+
+  /**
+   * Yield to the browser between slices of build work. While floors are being
+   * prepared in the background, also wait for a calm moment (camera at rest,
+   * no scrolling, mouse still) or for the lift doors to be closed, so any
+   * short pause lands when nothing on screen is moving.
+   */
+  async _yield() {
+    if (this._backgroundPrep) {
+      const t0 = performance.now();
+      while (!this._isCalm() && performance.now() - t0 < 8000) await wait(150);
+    }
+    this.engine?.settle(700); // don't let build work look like a slow GPU
+    if (import.meta.env.DEV && this._chunkT) (window.__chunks ||= []).push(Math.round(performance.now() - this._chunkT));
+    await new Promise((r) => (window.requestIdleCallback ? requestIdleCallback(() => r(), { timeout: 100 }) : setTimeout(r, 16)));
+    if (import.meta.env.DEV) this._chunkT = performance.now();
+  }
+
+  _isCalm() {
+    if (this.busy) return true; // doors are shut during a ride: nobody can see a pause
+    const now = performance.now();
+    const s = this.scroll;
+    return (
+      !this.ui.modalOpen &&
+      now - s.lastInput > 1200 &&
+      Math.abs(s.target - s.current) < 0.002 &&
+      now - (this._lastPointer || 0) > 500 &&
+      this.mascot?.hop == null
+    );
+  }
+
+  /** Build (once) and warm up a floor: geometry, textures on the GPU, shaders. */
+  ensureFloor(i) {
+    const f = this.floors[i];
+    f._ready ||= (async () => {
+      this._loadProgress?.(0.1);
+      this._chunkT = performance.now();
+      await f.build();
+      await grainDone(); // textures finish their grain pass off-thread
+      this.engine.scene.add(f.group);
+      const list = [];
+      f.interactives.forEach((e) => e.object.traverse((o) => o.isMesh && list.push(o)));
+      this.interactiveMeshes[i] = list;
+      this._loadProgress?.(0.6);
+      await this._warmFloor(f);
+      this._loadProgress?.(1);
+      f.built = true;
+      this._refreshDirectory();
+    })();
+    return f._ready;
+  }
+
+  async _warmFloor(f) {
+    const r = this.engine.renderer;
+    // Upload textures to the GPU a few at a time…
+    const maps = new Set();
+    f.group.traverse((o) => {
+      const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
+      for (const m of mats) for (const k of ['map', 'emissiveMap', 'roughnessMap', 'normalMap']) if (m[k]?.isTexture) maps.add(m[k]);
+    });
+    for (const t of maps) {
+      r.initTexture(t);
+      await this._yield();
+    }
+    // …then compile its shaders for this floor's exact lights, in one
+    // synchronous block so no frame is ever drawn with the wrong floor showing.
+    const vis = this.floors.map((x) => x.group.visible);
+    this.floors.forEach((x) => (x.group.visible = x === f));
+    try {
+      r.compile(this.engine.scene, this.engine.camera);
+    } catch (e) {}
+    this.floors.forEach((x, k) => (x.group.visible = vis[k]));
+    await this._yield();
+  }
+
+  /** After entering: prepare the remaining floors, nearest first, in idle time. */
+  async _prepareRest(from) {
+    const order = this.floors.map((_, i) => i).filter((i) => i !== from).sort((a, b) => Math.abs(a - from) - Math.abs(b - from));
+    this._backgroundPrep = true;
+    for (const i of order) {
+      await wait(500);
+      await this.ensureFloor(i);
+    }
+    this._backgroundPrep = false;
+  }
+
+  _refreshDirectory() {
+    this.ui.buildDirectory(
+      this.content.floors,
+      this.floors.map((f) => (f.built ? f.stops : [])),
+    );
   }
 
   /** Tell visitors when their browser, not their device, is what's holding the 3D back. */
@@ -274,6 +345,7 @@ export class App {
     await this.elevator.ride(from, i, `${f.level === 'G' ? 'Ground floor' : f.level === 'R' ? 'Rooftop' : 'Floor ' + f.level} · ${f.name}`, {
       onSwap: async () => {
         await wait(120);
+        await this.ensureFloor(i); // usually ready already; otherwise finishes behind the doors
         this.activate(i, opts);
         this.rig.push = -2.8;
         // The cab arrives with a little overshoot and settles back.
@@ -352,6 +424,7 @@ export class App {
   _bindPointer() {
     let down = null;
     window.addEventListener('pointermove', (e) => {
+      this._lastPointer = performance.now();
       this.ndc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
       this.rig.pointer.copy(this.ndc);
       this._moved = true;

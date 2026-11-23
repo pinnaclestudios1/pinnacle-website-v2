@@ -76,7 +76,8 @@ export class StudioRotunda extends Floor {
     this.anim = [];
     const spotTargets = [];
 
-    sectors.forEach((s, k) => {
+    for (const [k, s] of sectors.entries()) {
+      await this.pause();
       const a = k * 60 * DEG;
       const d = dirAt(a);
       const t = tanAt(a);
@@ -91,7 +92,7 @@ export class StudioRotunda extends Floor {
       if (s.id === 'voices') this._quotes(g, at(9, 0, 3.6), a);
       if (s.id === 'clients') this._logos(g, st.clients, a, R);
       if (s.id === 'engage') this._crystals(g, st.engagement, at, a);
-    });
+    }
 
     this.roving = new RovingSpots(g, spotTargets, { count: 2, intensity: 150, angle: 0.42, penumbra: 0.8 });
 
