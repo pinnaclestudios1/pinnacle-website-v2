@@ -11,10 +11,10 @@
 export const site = {
   name: 'Pinnacle Studios',
   shortName: 'Pinnacle',
-  // TODO: replace with your real domain (used for canonical URLs + sitemap)
-  url: 'https://www.example.com',
-  // TODO: replace with your real inbox
-  email: 'hello@pinnaclestudios.com',
+  // Used for canonical URLs + the sitemap. Change to your own domain once it's
+  // connected in Vercel (Settings › Domains).
+  url: 'https://pinnacle-website-v2.vercel.app',
+  email: 'team@pinnaclestudios.in',
   phone: '+91 00000 00000', // TODO
   location: 'Remote-first · Working worldwide', // TODO
   tagline: 'Software, web & creative studio.',
