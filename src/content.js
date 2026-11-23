@@ -21,12 +21,10 @@ export const site = {
   description:
     'Pinnacle Studios is a software and creative agency. We design, build and grow digital products: software, websites, UI/UX design, branding, motion graphics, automation and SEO.',
   founded: '2021', // TODO
+  // Add more profiles here (Behance, Dribbble, X…) in the same format.
   socials: [
-    { label: 'Instagram', href: 'https://instagram.com/' },
-    { label: 'LinkedIn', href: 'https://linkedin.com/' },
-    { label: 'Behance', href: 'https://behance.net/' },
-    { label: 'Dribbble', href: 'https://dribbble.com/' },
-    { label: 'X', href: 'https://x.com/' },
+    { label: 'Instagram', href: 'https://www.instagram.com/pinnaclestudios.in/' },
+    { label: 'LinkedIn', href: 'https://www.linkedin.com/company/pinnacle-studios2/' },
   ],
   // Optional: set a form endpoint (Formspree, Getform, your own API…).
   // If empty, the contact form opens the visitor's email app instead.
