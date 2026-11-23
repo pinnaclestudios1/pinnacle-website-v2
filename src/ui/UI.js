@@ -380,8 +380,13 @@ export class UI {
     const b = this.el.bubble;
     if (!b.classList.contains('is-on')) return;
     if (pos.behind) return b.classList.remove('is-on');
-    b.style.transform = `translate(${pos.x.toFixed(1)}px, ${pos.y.toFixed(1)}px)`;
-    b.dataset.side = side;
+    // Not enough room above Pinn (header in the way)? Show the bubble below instead.
+    const below = pos.y < 70 + b.offsetHeight + 12;
+    const y = below ? pos.y + 26 : pos.y;
+    b.style.transform = `translate(${pos.x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+    // Always open toward the middle of the screen so it never runs off an edge.
+    b.dataset.side = pos.x > window.innerWidth * 0.5 ? 1 : 0;
+    b.dataset.below = below ? '1' : '0';
   }
 
   setHover(entry) {

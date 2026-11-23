@@ -2774,3 +2774,16 @@ html[data-floor='services'] .hud-header .icon-btn {
 html[data-floor='services'] .hud-header::before {
   background: linear-gradient(180deg, rgba(232, 228, 220, 0.85), rgba(232, 228, 220, 0));
 }
+
+/* Speech bubble flipped below Pinn when the header leaves no room above */
+.bubble[data-below='1'] {
+  translate: 12px 0;
+  border-radius: 4px 16px 16px 16px;
+  transform-origin: 0 0;
+}
+
+.bubble[data-below='1'][data-side='1'] {
+  translate: calc(-100% - 12px) 0;
+  border-radius: 16px 4px 16px 16px;
+  transform-origin: 100% 0;
+}

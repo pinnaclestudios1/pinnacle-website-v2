@@ -243,8 +243,11 @@ export class Engine {
         this.minScale = t.scale;
         this.ceiling = 1;
         this._applyResolution();
-        this.capped = Math.round(fps);
-        this.onCapped?.(this.capped);
+        this.capped = Math.round(t.fps);
+        // Only tell the visitor when it looks like a real power-saving cap
+        // (~30 fps). Other drops (a throttled or partly hidden window) just
+        // keep full sharpness quietly.
+        if (this.capped >= 25 && this.capped <= 35) this.onCapped?.(this.capped);
         this.settle(500);
         return;
       }

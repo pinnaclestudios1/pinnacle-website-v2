@@ -207,7 +207,7 @@ export class App {
       );
     }
     e.onCapped = (fps) => {
-      if (fps <= 34)
+      if (fps <= 35)
         this.ui.toast(`Your browser is limiting animations to about ${fps} fps, usually Chrome’s Energy Saver or a battery-saver mode. For smooth motion, plug in or turn off Energy Saver (Settings › Performance).`, 16000);
     };
     if (new URLSearchParams(location.search).has('debug')) {
